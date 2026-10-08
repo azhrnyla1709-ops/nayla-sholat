@@ -75,6 +75,18 @@ input[type=date],input[type=password],input[type=text]{width:100%;padding:12px;b
 #btn-login{margin-top:12px}
 .user-chip{display:inline-block;margin-top:8px;background:rgba(255,255,255,.2);padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700}
 .btn-logout{margin-top:8px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:99px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+/* Font Awesome icon tuning */
+.pin-logo i{font-size:52px;color:var(--green)}
+.app-header h1 i{font-size:16px}
+.header-moon i{font-size:30px;color:#fff}
+.summary-icon i{font-size:40px;color:var(--green)}
+.prayer-icon i{font-size:24px;color:var(--green)}
+.hist-item .t i{font-size:24px;color:var(--green-dark)}
+.bottom-nav button i{font-size:22px}
+.check i{font-size:60px;color:var(--green)}
+.stat-card span i{font-size:22px;color:var(--green)}
+.stat-card.gold span i{color:var(--gold)}
+.status i,.badge i,.chip i,.btn-primary i,.btn-gold i,.btn-ghost i,.btn-danger i,.field-label i{margin-right:2px}
 .btn-mini-danger{margin-left:auto;background:#fdecec;color:var(--danger);border:1px solid var(--danger);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
 .row{display:flex;gap:8px}.row button{flex:1}
 .small{font-size:12px}

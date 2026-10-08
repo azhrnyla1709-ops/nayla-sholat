@@ -1,0 +1,111 @@
+:root{
+  --green:#0e7a5a; --green-dark:#0a5c44; --gold:#c9a227; --gold-light:#fdf6dd;
+  --bg:#f4f7f5; --white:#fff; --muted:#7a8a85; --danger:#d64545;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,Arial,sans-serif}
+body{background:#1e2b27;display:flex;justify-content:center;min-height:100vh}
+.phone{width:100%;max-width:480px;background:var(--bg);min-height:100vh;position:relative;padding-bottom:90px}
+.hidden{display:none!important}
+
+/* PIN / Login */
+.pin-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:linear-gradient(160deg,var(--green-dark),var(--green));}
+.pin-card{background:var(--white);border-radius:24px;padding:32px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.pin-logo{font-size:52px;color:var(--green-dark)}
+.pin-card h2{color:var(--green-dark);margin:8px 0 4px}
+.muted{color:var(--muted)}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin:20px 0 8px}
+.pin-dots span{width:16px;height:16px;border-radius:50%;border:2px solid var(--green);display:inline-block}
+.pin-dots span.fill{background:var(--green)}
+.pin-error{color:var(--danger);min-height:22px;font-size:14px;font-weight:600}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.pin-pad button{padding:14px;font-size:20px;border-radius:14px;border:1px solid #e0e0e0;background:#f9f9f9;cursor:pointer}
+.pin-pad button:active{background:#e6f3ec}
+.pin-ok{background:var(--green)!important;color:#fff}
+.pin-del{background:var(--gold-light)!important}
+.pin-hint{margin-top:14px;font-size:12px;color:var(--muted)}
+
+/* Header */
+.app-header{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff;padding:22px 18px;border-radius:0 0 26px 26px;display:flex;justify-content:space-between;align-items:center}
+.app-header h1{font-size:20px}
+.app-header p{font-size:13px;opacity:.9;margin-top:4px}
+.header-moon{font-size:38px;background:rgba(255,255,255,.15);width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+main{padding:16px}
+.page{display:none}.page.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.page-title{color:var(--green-dark);margin-bottom:12px}
+
+.summary-card{background:var(--white);border-radius:18px;padding:16px;display:flex;justify-content:space-between;align-items:center;border-left:6px solid var(--gold);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.summary-card small{color:var(--muted)}
+.summary-card h3{color:var(--green-dark);margin:4px 0 8px}
+.progress{background:#e6eeeB;border-radius:99px;height:10px;overflow:hidden}
+.progress div{height:100%;background:linear-gradient(90deg,var(--green),var(--gold));width:0%;transition:.4s}
+.summary-icon{font-size:40px;color:var(--green-dark)}
+.date-label{margin:14px 4px 8px;font-weight:700;color:var(--green-dark)}
+.prayer-list{display:grid;gap:10px}
+.prayer-card{background:var(--white);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.prayer-icon{font-size:28px;background:#eef6f1;width:50px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:14px;color:var(--green-dark)}
+.prayer-card b{color:var(--green-dark)}
+.prayer-card small{color:var(--muted)}
+.prayer-card .status{margin-left:auto;font-size:13px;font-weight:700;padding:6px 12px;border-radius:99px}
+.done{background:#e6f7ec;color:var(--green)}
+.todo{background:#f1f1f1;color:#999}
+.prayer-card.is-done{border:1.5px solid var(--green)}
+.quote{margin-top:16px;text-align:center;color:var(--muted);font-style:italic;font-size:13px;background:var(--gold-light);border-radius:14px;padding:12px}
+.quote span{color:var(--gold)}
+
+/* Buttons & cards */
+.card{background:var(--white);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.btn-primary{width:100%;background:var(--green);color:#fff;border:none;border-radius:14px;padding:13px;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
+.btn-gold{width:100%;background:var(--gold);color:#fff;border:none;border-radius:14px;padding:13px;font-weight:700;cursor:pointer}
+.btn-ghost{width:100%;background:#fff;border:1.5px solid var(--green);color:var(--green);border-radius:14px;padding:11px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-danger{width:100%;background:var(--danger);color:#fff;border:none;border-radius:14px;padding:12px;font-weight:700;cursor:pointer;margin-top:8px}
+.field-label{display:block;font-weight:700;color:var(--green-dark);margin:12px 0 8px}
+.prayer-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--green);background:#fff;color:var(--green);border-radius:99px;padding:8px 14px;cursor:pointer;font-weight:600}
+.chip.sel{background:var(--green);color:#fff}
+.qr-reader{border-radius:16px;overflow:hidden;background:#000;min-height:60px;margin:8px 0}
+.qr-reader video{width:100%!important}
+.divider{text-align:center;color:var(--muted);margin:12px 0}
+.qr-valid-box{text-align:center;background:#fff;border-radius:16px;padding:14px;margin-top:12px}
+.qr-valid-box code{background:#eee;padding:2px 6px;border-radius:6px}
+#demo-qr,.demo-qr{margin:10px auto;display:block}
+input[type=date],input[type=password],input[type=text]{width:100%;padding:12px;border-radius:12px;border:1.5px solid #ddd;margin:6px 0;font-size:15px}
+.field-label.left{text-align:left}
+#btn-login{margin-top:12px}
+.row{display:flex;gap:8px}.row button{flex:1}
+.small{font-size:12px}
+.msg{min-height:20px;font-size:14px;margin-top:6px}
+.user-chip{display:inline-block;margin-top:8px;background:rgba(255,255,255,.2);padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700}
+.btn-logout{margin-top:8px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:99px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-mini-danger{margin-left:auto;background:#fdecec;color:var(--danger);border:1px solid var(--danger);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* History */
+.hist-item{background:#fff;border-radius:14px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center}
+.hist-item .t{font-size:24px;color:var(--green-dark)}.hist-item b{color:var(--green-dark)}.hist-item small{color:var(--muted)}
+.badge{margin-left:auto;background:#e6f7ec;color:var(--green);font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px}
+
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-card{background:#fff;border-radius:16px;padding:16px;text-align:center}
+.stat-card.gold{border:1.5px solid var(--gold);background:var(--gold-light)}
+.stat-card h3{font-size:26px;color:var(--green-dark)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:12px}
+.bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar div{width:100%;background:var(--green);border-radius:8px 8px 4px 4px;min-height:6px}
+.bar.gold div{background:var(--gold)}
+.bar small{font-size:10px;color:var(--muted)}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;bottom:0;width:100%;max-width:480px;background:#fff;display:flex;border-top:1px solid #e5e5e5;padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+.bottom-nav button{flex:1;background:none;border:none;font-size:22px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#999;cursor:pointer}
+.bottom-nav button small{font-size:11px}
+.bottom-nav button.active{color:var(--green);font-weight:700}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:24px;z-index:99;max-width:480px;margin:0 auto}
+.modal-card{background:#fff;border-radius:24px;padding:28px;text-align:center;animation:pop .35s ease;width:100%}
+@keyframes pop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1)}}
+.check{font-size:60px;animation:bounce 1s infinite;color:var(--green)}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.modal-card h3{color:var(--green-dark);margin:10px 0}

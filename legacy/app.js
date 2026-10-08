@@ -1,6 +1,6 @@
 /* Absensi Sholat v2 — Login NIS + jvault cloud DB */
 const PRAYERS = [
-  { name: "Dzuhur", icon: "☀️", time: "12:00" },
+  { name: "Dzuhur", icon: "fa-solid fa-sun", time: "12:00" },
 ];
 const TARGET_PER_DAY = 1, TARGET_PER_WEEK = 7;
 const VALID_QR = ["ABSENSI-SHOLAT-VALID", "SHOLAT-BERJAMAAH-2026"];
@@ -35,57 +35,127 @@ function seedDB() {
   };
 }
 function normalize(raw) {
-  // Bentuk respons JsonVault bervariasi, tangani semua yang umum:
+  // Bentuk respons JsonVault bervariasi — cari objek yang memuat `users` secara rekursif.
   // {users, attendance} | {data:{users..}} | {record:{..}} | {bin:{..}} | {content:{..}} | {result:{..}}
   if (!raw || typeof raw !== "object") return null;
-  if (raw.users && raw.attendance) return raw;
-  for (const k of ["data", "record", "bin", "content", "result", "value"]) {
-    const v = raw[k];
-    if (v && typeof v === "object") {
-      if (v.users && v.attendance) return v;
-      // kadang data = { ...isi bin langsung } tanpa attendance (bin baru) -> tetap pakai
-      if (v.users && !v.attendance) return { users: v.users, attendance: v.attendance || [] };
+  if (Array.isArray(raw.users)) return { users: raw.users, attendance: Array.isArray(raw.attendance) ? raw.attendance : [] };
+  const seen = new Set();
+  const queue = [raw];
+  while (queue.length) {
+    const o = queue.shift();
+    if (!o || typeof o !== "object" || seen.has(o)) continue;
+    seen.add(o);
+    if (Array.isArray(o.users)) return { users: o.users, attendance: Array.isArray(o.attendance) ? o.attendance : [] };
+    for (const k of ["data", "record", "bin", "content", "result", "value", "payload", "body"]) {
+      if (o[k] && typeof o[k] === "object") queue.push(o[k]);
     }
   }
   return null;
 }
-async function dbLoad() {
-  // 1) BACA BIN resmi JsonVault: GET api?bin_id=xxx + X-API-Key
-  try {
-    const r = await fetch(API_READ, { method: "GET", headers: JV_HEADERS });
-    const j = await r.json();
-    const n = normalize(j);
-    if (n) {
-      DB = { users: n.users || [], attendance: n.attendance || [] };
-      if (!DB.users.some(u => String(u.nis) === ADMIN_NIS)) {
-        DB.users.unshift({ nis: ADMIN_NIS, nama: "Admin", pin: "1234", role: "admin", createdAt: new Date().toISOString() });
-        await dbSave(true);
-      } else cloudOK = true;
-      return;
-    }
-    // Bin kosong ({} / {data:{}} / dsb) -> seed
-  } catch (e) { /* offline -> fallback bawah */ }
-
-  // 2) fallback: backup lokal
+function backupLocal() { try { localStorage.setItem(LS_BACKUP, JSON.stringify(DB)); } catch {} }
+function readBackup() {
   try {
     const b = JSON.parse(localStorage.getItem(LS_BACKUP) || "null");
     const n = normalize(b);
-    if (n && n.users.length) { DB = { users: n.users, attendance: n.attendance || [] }; cloudOK = false; return; }
+    if (n && (n.users.length || (n.attendance && n.attendance.length))) return { users: n.users || [], attendance: n.attendance || [] };
   } catch {}
+  return null;
+}
+// Gabung cloud + lokal agar data scan offline tidak hilang tertimpa data cloud lama.
+// Kunci unik absensi: nis|date|prayer. User: nis (data cloud diprioritaskan).
+function mergeDB(cloud, local) {
+  const c = cloud || { users: [], attendance: [] };
+  const l = local || { users: [], attendance: [] };
+  const users = new Map();
+  [...l.users, ...c.users].forEach(u => { if (u && u.nis != null) users.set(String(u.nis), u); });
+  const att = new Map();
+  [...(c.attendance || []), ...(l.attendance || [])].forEach(a => {
+    if (a && a.nis != null && a.date && a.prayer) att.set(`${a.nis}|${a.date}|${a.prayer}`, a);
+  });
+  return { users: [...users.values()], attendance: [...att.values()] };
+}
+async function dbLoad() {
+  // 1) BACA BIN resmi JsonVault: GET api?bin_id=xxx + X-API-Key
+  let cloud = null, cloudFetched = false, loadNote = "";
+  try {
+    const r = await fetch(API_READ, { method: "GET", headers: JV_HEADERS });
+    const txt = await r.text();
+    if (r.ok) {
+      try {
+        const n = normalize(JSON.parse(txt));
+        if (n) { cloud = { users: n.users || [], attendance: n.attendance || [] }; cloudFetched = true; }
+        else loadNote = "Respons cloud tidak berisi users.";
+      } catch { loadNote = "Respons cloud bukan JSON."; }
+    } else {
+      loadNote = "Baca cloud gagal (HTTP " + r.status + ").";
+    }
+    if (!r.ok || !cloudFetched) console.warn("[dbLoad]", r.status, txt.slice(0, 300));
+  } catch (e) { loadNote = "Tidak bisa hubungi cloud (" + (e.message || e) + ")."; }
 
-  DB = seedDB();
+  // 2) backup lokal (berisi scan yang mungkin belum sempat naik ke cloud)
+  const local = readBackup();
+
+  // 3) gabung: jangan pernah buang data lokal
+  DB = mergeDB(cloud, local);
+  if (!DB.users.length) DB = seedDB();
+  if (!DB.users.some(u => String(u.nis) === ADMIN_NIS)) {
+    DB.users.unshift({ nis: ADMIN_NIS, nama: "Admin", pin: "1234", role: "admin", createdAt: new Date().toISOString() });
+  }
+  backupLocal();
+
+  if (cloudFetched) {
+    // jika lokal punya data yang belum ada di cloud, dorong naik (best effort)
+    const cloudKeys = new Set((cloud ? cloud.attendance : []).map(a => `${a.nis}|${a.date}|${a.prayer}`));
+    const hasPending = DB.attendance.some(a => !cloudKeys.has(`${a.nis}|${a.date}|${a.prayer}`)) || !cloud;
+    cloudOK = true;
+    setSync("Database online.");
+    if (hasPending) await dbSave(true);
+    return;
+  }
+
   cloudOK = false;
-  await dbSave(true); // best effort tulis seed ke cloud
+  const st = loadNote || "Mode lokal.";
+  setSync(st + " Data tetap tersimpan lokal.");
+  const ds = $("db-status"); if (ds) ds.textContent = st;
 }
 async function dbSave(silent) {
-  localStorage.setItem(LS_BACKUP, JSON.stringify(DB));
-  // TULIS resmi JsonVault: PATCH api?bin_id=xxx&action=merge (merge parsial)
-  try {
-    const r = await fetch(API_MERGE, { method: "PATCH", headers: JV_HEADERS, body: JSON.stringify(DB) });
-    if (r.ok) { cloudOK = true; setSync("☁️ Tersinkron ke database."); return true; }
-  } catch {}
+  backupLocal(); // SELALU simpan lokal dulu — inilah yang bikin scan tidak hilang
+  // TULIS resmi JsonVault: PATCH api?bin_id=xxx&action=merge.
+  // action=merge kadang deep-merge array per indeks sehingga item baru tak masuk;
+  // maka coba berurutan: merge -> replace (PATCH biasa) -> PUT -> POST.
+  const payload = JSON.stringify(DB);
+  const tries = [
+    { method: "PATCH", url: API_MERGE, label: "merge" },
+    { method: "PATCH", url: API_READ, label: "replace" },
+    { method: "PUT", url: API_READ, label: "put" },
+    { method: "POST", url: API_READ, label: "post" },
+  ];
+  let lastErr = "";
+  for (const t of tries) {
+    try {
+      const r = await fetch(t.url, { method: t.method, headers: JV_HEADERS, body: payload });
+      const txt = await r.text().catch(() => "");
+      if (r.ok) {
+        // verifikasi: baca ulang, pastikan data absen terbaru ada di cloud
+        try {
+          const vr = await fetch(API_READ, { method: "GET", headers: JV_HEADERS });
+          const vj = normalize(JSON.parse(await vr.text()));
+          const keys = new Set((vj ? vj.attendance : []).map(a => `${a.nis}|${a.date}|${a.prayer}`));
+          const missing = DB.attendance.filter(a => !keys.has(`${a.nis}|${a.date}|${a.prayer}`));
+          if (missing.length === 0) { cloudOK = true; setSync("Tersinkron ke database."); return true; }
+          lastErr = "server OK tapi verifikasi kurang " + missing.length + " data (" + t.label + ").";
+          console.warn("[dbSave] verify fail via", t.label, missing);
+          continue; // coba metode tulis berikutnya
+        } catch { cloudOK = true; setSync("Tersinkron ke database."); return true; }
+      }
+      lastErr = "server " + r.status + " (" + t.label + "): " + String(txt).slice(0, 200);
+      console.warn("[dbSave]", lastErr);
+    } catch (e) { lastErr = "jaringan (" + t.label + "): " + (e.message || e); }
+  }
   cloudOK = false;
-  if (!silent) setSync("⚠️ Offline — tersimpan lokal, akan disinkron saat online.");
+  const msg = "Belum tersinkron — data AMAN di HP. " + lastErr + " Tekan 'Sinkron Ulang'.";
+  setSync(msg);
+  if (!silent) alert("Absensi tersimpan di HP, tapi gagal ke database.\n\n" + lastErr);
   return false;
 }
 function setSync(msg) { const el = $("sync-status"); if (el) el.textContent = msg; }
@@ -113,7 +183,7 @@ function enterApp() {
   $("login-screen").classList.add("hidden");
   $("app").classList.remove("hidden");
   const isAdmin = currentUser.role === "admin" || String(currentUser.nis) === ADMIN_NIS;
-  $("user-chip").textContent = `🎓 ${currentUser.nis} • ${currentUser.nama}${isAdmin ? " • ADMIN" : ""}`;
+  $("user-chip").innerHTML = `<i class="fa-solid fa-graduation-cap"></i> ${currentUser.nis} • ${currentUser.nama}${isAdmin ? " • ADMIN" : ""}`;
   $("nav-admin").style.display = isAdmin ? "" : "none";
   $("history-filter-admin").style.display = isAdmin ? "" : "none";
   $("me-info").textContent = `${currentUser.nama} — NIS ${currentUser.nis} (${isAdmin ? "Admin" : "Siswa"})`;
@@ -149,17 +219,19 @@ async function recordAttendance(prayer) {
   if (isDone(prayer, date)) { alert(prayer + " sudah diabsen hari ini (1x/hari)."); return; }
   const rec = { nis: String(currentUser.nis), nama: currentUser.nama, prayer, date, time: nowTime(), status: "Sudah Absen" };
   DB.attendance.push(rec);
-  await dbSave();
+  backupLocal(); // simpan lokal dulu agar tidak hilang
   $("success-detail").textContent = `${prayer} • ${currentUser.nama} (${currentUser.nis}) • ${fmtID(date)} • ${rec.time}`;
   $("success-modal").classList.remove("hidden");
   refreshAll();
+  const ok = await dbSave(); // sinkron cloud di background
+  if (!ok) $("success-detail").textContent += " (tersimpan lokal, menunggu sinkron)";
 }
 
 /* ---------- Scan QR ---------- */
 function renderChips() {
   $("scan-chips").innerHTML = PRAYERS.map(p => {
     const done = currentUser && isDone(p.name, todayStr());
-    return `<button class="chip ${p.name === selectedPrayer ? "sel" : ""}" data-p="${p.name}" ${done ? "disabled style='opacity:.4'" : ""}>${p.icon} ${p.name}${done ? " ✓" : ""}</button>`;
+    return `<button class="chip ${p.name === selectedPrayer ? "sel" : ""}" data-p="${p.name}" ${done ? "disabled style='opacity:.4'" : ""}><i class="${p.icon}"></i> ${p.name}${done ? ' <i class="fa-solid fa-check"></i>' : ""}</button>`;
   }).join("");
   document.querySelectorAll(".chip").forEach(c => c.onclick = () => { selectedPrayer = c.dataset.p; renderChips(); });
 }
@@ -170,15 +242,19 @@ async function startScan() {
     html5Qr = new Html5Qrcode("reader");
     scanning = true;
     await html5Qr.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => handleQr(txt), () => {});
-    $("btn-start-scan").textContent = "⏳ Kamera aktif… arahkan ke QR";
+    $("btn-start-scan").innerHTML = '<i class="fa-solid fa-camera"></i> Kamera aktif… arahkan ke QR';
   } catch (e) { alert("Kamera tidak tersedia: " + e); scanning = false; }
 }
 async function stopScan() {
   if (html5Qr && scanning) { try { await html5Qr.stop(); await html5Qr.clear(); } catch {} }
   scanning = false;
-  const b = $("btn-start-scan"); if (b) b.textContent = "📷 Scan QR";
+  const b = $("btn-start-scan"); if (b) b.innerHTML = '<i class="fa-solid fa-camera"></i> Scan QR';
 }
+let lastScanAt = 0;
 function handleQr(text) {
+  const now = Date.now();
+  if (now - lastScanAt < 3000) return; // cegah tembakan berulang dari kamera
+  lastScanAt = now;
   text = (text || "").trim();
   if (VALID_QR.some(v => text.includes(v))) { stopScan(); recordAttendance(selectedPrayer); }
   else alert("QR tidak valid.\nIsi QR: " + text);
@@ -206,9 +282,9 @@ function renderHome() {
   $("prayer-list").innerHTML = PRAYERS.map(p => {
     const rec = data.find(x => x.prayer === p.name);
     return `<div class="prayer-card ${rec ? "is-done" : ""}">
-      <div class="prayer-icon">${p.icon}</div>
-      <div><b>${p.name}</b><br><small>⏰ ${p.time} • ${rec ? "Absen " + rec.time : "Belum absen"}</small></div>
-      <span class="status ${rec ? "done" : "todo"}">${rec ? "🟢 Sudah Absen" : "⚪ Belum Absen"}</span>
+      <div class="prayer-icon"><i class="${p.icon}"></i></div>
+      <div><b>${p.name}</b><br><small><i class="fa-solid fa-clock"></i> ${p.time} • ${rec ? "Absen " + rec.time : "Belum absen"}</small></div>
+      <span class="status ${rec ? "done" : "todo"}">${rec ? '<i class="fa-solid fa-circle-check"></i> Sudah Absen' : '<i class="fa-regular fa-circle"></i> Belum Absen'}</span>
     </div>`;
   }).join("");
 }
@@ -225,10 +301,10 @@ function renderHistory() {
   if (dateF) data = data.filter(x => x.date === dateF);
   $("history-list").innerHTML = data.length ? data.slice(0, 200).map(x => {
     const p = PRAYERS.find(p => p.name === x.prayer);
-    return `<div class="hist-item"><div class="t">${p ? p.icon : "🕌"}</div>
-      <div><b>${x.prayer}</b> <small>• ${x.nama || ""} (${x.nis})</small><br><small>📅 ${x.date} • ⏰ ${x.time}</small></div>
-      <span class="badge">✓ ${x.status}</span></div>`;
-  }).join("") : `<div class="card muted">Belum ada data. Yuk scan dulu! 🕌</div>`;
+    return `<div class="hist-item"><div class="t"><i class="${p ? p.icon : "fa-solid fa-mosque"}"></i></div>
+      <div><b>${x.prayer}</b> <small>• ${x.nama || ""} (${x.nis})</small><br><small><i class="fa-solid fa-calendar-days"></i> ${x.date} • <i class="fa-solid fa-clock"></i> ${x.time}</small></div>
+      <span class="badge"><i class="fa-solid fa-check"></i> ${x.status}</span></div>`;
+  }).join("") : `<div class="card muted">Belum ada data. Yuk scan dulu! <i class="fa-solid fa-mosque"></i></div>`;
 }
 $("history-date").onchange = renderHistory;
 if ($("history-nis")) $("history-nis").oninput = renderHistory;
@@ -259,7 +335,7 @@ function renderStats() {
   const since = new Date(); since.setDate(since.getDate() - 30);
   $("per-prayer").innerHTML = PRAYERS.map(p => {
     const n = data.filter(x => x.prayer === p.name && x.date >= todayStr(since)).length;
-    return `<div style="margin:8px 0"><small>${p.icon} ${p.name} — <b>${n}</b>x</small>
+    return `<div style="margin:8px 0"><small><i class="${p.icon}"></i> ${p.name} — <b>${n}</b>x</small>
       <div class="progress"><div style="width:${Math.min(100, n / 30 * 100)}%"></div></div></div>`;
   }).join("");
 }
@@ -268,7 +344,7 @@ function renderStats() {
 function renderUsers() {
   $("user-count").textContent = DB.users.length;
   $("user-list").innerHTML = DB.users.map(u => `
-    <div class="hist-item"><div class="t">${u.role === "admin" ? "👑" : "🎓"}</div>
+    <div class="hist-item"><div class="t"><i class="${u.role === "admin" ? "fa-solid fa-crown" : "fa-solid fa-graduation-cap"}"></i></div>
       <div><b>${u.nama}</b> <small>(${u.role})</small><br><small>NIS: ${u.nis} • PIN: ${u.pin}</small></div>
       ${String(u.nis) === ADMIN_NIS ? "" : `<button class="btn-mini-danger" data-del="${u.nis}">Hapus</button>`}
     </div>`).join("");
@@ -288,7 +364,7 @@ $("btn-add-user").onclick = async () => {
   if (DB.users.some(u => String(u.nis) === String(nis))) { $("admin-msg").textContent = "NIS sudah terdaftar."; return; }
   DB.users.push({ nis: String(nis), nama, pin, role: String(nis) === ADMIN_NIS ? "admin" : "siswa", createdAt: new Date().toISOString() });
   await dbSave();
-  $("admin-msg").textContent = `✅ NIS ${nis} (${nama}) ditambahkan.`;
+  $("admin-msg").textContent = `Berhasil: NIS ${nis} (${nama}) ditambahkan.`;
   $("new-nis").value = $("new-nama").value = $("new-user-pin").value = "";
   renderUsers();
 };
@@ -302,13 +378,19 @@ $("btn-change-pin").onclick = async () => {
   const i = DB.users.findIndex(u => String(u.nis) === String(currentUser.nis));
   if (i >= 0) DB.users[i].pin = a;
   await dbSave();
-  $("pin-msg").textContent = "✅ PIN berhasil diganti & tersimpan di database.";
+  $("pin-msg").textContent = "Berhasil: PIN diganti & tersimpan di database.";
   $("new-pin").value = $("confirm-pin").value = "";
 };
 $("btn-reset").onclick = async () => {
   if (!confirm("Hapus seluruh riwayat akun " + currentUser.nis + "?")) return;
   DB.attendance = DB.attendance.filter(a => String(a.nis) !== String(currentUser.nis));
   await dbSave(); refreshAll(); alert("Riwayat saya dihapus.");
+};
+$("btn-sync").onclick = async () => {
+  setSync("Menyinkron…");
+  await dbLoad();
+  setSync(cloudOK ? "Tersinkron ke database." : $("sync-status").textContent);
+  refreshAll();
 };
 
 /* ---------- Nav ---------- */
@@ -336,8 +418,8 @@ setInterval(() => {
   renderDots();
   $("db-status").textContent = "Menghubungkan database…";
   await dbLoad();
-  $("db-status").textContent = cloudOK ? "☁️ Database online." : "⚠️ Database offline — mode lokal (data tetap tersimpan).";
-  setSync(cloudOK ? "☁️ Database online." : "⚠️ Mode lokal.");
+  $("db-status").textContent = cloudOK ? "Database online." : "Database offline — mode lokal (data tetap tersimpan).";
+  setSync(cloudOK ? "Database online." : "Mode lokal.");
   // auto-login jika ada sesi
   const s = localStorage.getItem(LS_SESSION);
   if (s) {

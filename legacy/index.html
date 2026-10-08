@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-<title>Absensi Sholat Dzuhur • Login NIS 🕌</title>
+<title>Absensi Sholat Dzuhur - Login NIS</title>
 <link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
@@ -13,14 +14,14 @@
   <!-- LOGIN NIS + PIN -->
   <div id="login-screen" class="pin-screen">
     <div class="pin-card">
-      <div class="pin-logo">🕌</div>
+      <div class="pin-logo"><i class="fa-solid fa-mosque"></i></div>
       <h2>Absensi Sholat Dzuhur</h2>
-      <p class="muted">Masuk dengan NIS & PIN</p>
+      <p class="muted">Masuk dengan NIS &amp; PIN</p>
 
-      <label class="field-label left">🎓 NIS</label>
+      <label class="field-label left"><i class="fa-solid fa-graduation-cap"></i> NIS</label>
       <input type="text" inputmode="numeric" id="login-nis" placeholder="Contoh: 25261122" maxlength="20" autocomplete="username" />
 
-      <label class="field-label left">🔑 PIN <small class="muted">(4–6 digit)</small></label>
+      <label class="field-label left"><i class="fa-solid fa-key"></i> PIN <small class="muted">(4–6 digit)</small></label>
       <div class="pin-dots" id="pin-dots">
         <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
@@ -29,9 +30,9 @@
         <button>1</button><button>2</button><button>3</button>
         <button>4</button><button>5</button><button>6</button>
         <button>7</button><button>8</button><button>9</button>
-        <button class="pin-del">⌫</button><button>0</button><button class="pin-ok">✔</button>
+        <button class="pin-del"><i class="fa-solid fa-delete-left"></i></button><button>0</button><button class="pin-ok"><i class="fa-solid fa-check"></i></button>
       </div>
-      <button class="btn-primary" id="btn-login">Masuk →</button>
+      <button class="btn-primary" id="btn-login">Masuk <i class="fa-solid fa-arrow-right"></i></button>
       <p class="pin-hint" id="db-status">Menghubungkan database…</p>
       <p class="pin-hint">Admin: <b>25261122</b> • PIN awal: <b>1234</b></p>
     </div>
@@ -41,13 +42,13 @@
   <div id="app" class="hidden">
     <header class="app-header">
       <div>
-        <h1>Assalamu'alaikum 👋</h1>
+        <h1>Assalamu'alaikum <i class="fa-solid fa-hand"></i></h1>
         <p id="datetime">—</p>
         <div class="user-chip" id="user-chip">—</div>
       </div>
       <div>
-        <div class="header-moon">🌙</div>
-        <button class="btn-logout" id="btn-logout">Keluar</button>
+        <div class="header-moon"><i class="fa-solid fa-moon"></i></div>
+        <button class="btn-logout" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
       </div>
     </header>
 
@@ -60,7 +61,7 @@
             <h3 id="today-summary">0 / 1 Sholat Dzuhur</h3>
             <div class="progress"><div id="today-bar"></div></div>
           </div>
-          <div class="summary-icon">🕌</div>
+          <div class="summary-icon"><i class="fa-solid fa-mosque"></i></div>
         </div>
         <p class="date-label" id="today-label"></p>
         <div class="prayer-list" id="prayer-list"></div>
@@ -69,15 +70,15 @@
 
       <!-- SCAN -->
       <section id="page-scan" class="page">
-        <h2 class="page-title">Scan Absensi Dzuhur 📷</h2>
-        <label class="field-label">Sholat: ☀️ Dzuhur (1x sehari)</label>
+        <h2 class="page-title">Scan Absensi Dzuhur <i class="fa-solid fa-camera"></i></h2>
+        <label class="field-label">Sholat: <i class="fa-solid fa-sun"></i> Dzuhur (1x sehari)</label>
         <div class="prayer-chips" id="scan-chips"></div>
         <label class="field-label">Scan QR Code Dzuhur</label>
         <div id="reader" class="qr-reader"></div>
-        <button class="btn-primary" id="btn-start-scan">📷 Scan QR</button>
-        <button class="btn-ghost" id="btn-stop-scan">Berhenti Kamera</button>
+        <button class="btn-primary" id="btn-start-scan"><i class="fa-solid fa-camera"></i> Scan QR</button>
+        <button class="btn-ghost" id="btn-stop-scan"><i class="fa-solid fa-stop"></i> Berhenti Kamera</button>
         <div class="divider">atau</div>
-        <button class="btn-gold" id="btn-demo-scan">✨ Simulasi Scan Berhasil</button>
+        <button class="btn-gold" id="btn-demo-scan"><i class="fa-solid fa-wand-magic-sparkles"></i> Simulasi Scan Berhasil</button>
         <div class="qr-valid-box">
           <p><b>QR Valid:</b> <code>ABSENSI-SHOLAT-VALID</code></p>
           <canvas id="demo-qr" width="140" height="140"></canvas>
@@ -87,13 +88,13 @@
 
       <!-- RIWAYAT -->
       <section id="page-history" class="page">
-        <h2 class="page-title">Riwayat 📜</h2>
+        <h2 class="page-title">Riwayat <i class="fa-solid fa-scroll"></i></h2>
         <div class="card" id="history-filter-admin" style="display:none">
-          <label class="field-label">🔍 Filter NIS (Admin)</label>
+          <label class="field-label"><i class="fa-solid fa-magnifying-glass"></i> Filter NIS (Admin)</label>
           <input type="text" id="history-nis" placeholder="Kosong = semua / isi NIS tertentu" />
         </div>
         <div class="card">
-          <label class="field-label">📅 Lihat tanggal tertentu</label>
+          <label class="field-label"><i class="fa-solid fa-calendar-days"></i> Lihat tanggal tertentu</label>
           <input type="date" id="history-date" />
           <div class="row">
             <button class="btn-ghost" id="btn-today">Hari ini</button>
@@ -105,17 +106,17 @@
 
       <!-- STATISTIK -->
       <section id="page-stats" class="page">
-        <h2 class="page-title">Statistik 📊</h2>
+        <h2 class="page-title">Statistik <i class="fa-solid fa-chart-column"></i></h2>
         <div class="stat-grid">
-          <div class="stat-card"><span>✅</span><h3 id="stat-total">0</h3><small>Total Tercatat</small></div>
-          <div class="stat-card gold"><span>⭐</span><h3 id="stat-percent">0%</h3><small>Kelengkapan</small></div>
+          <div class="stat-card"><span><i class="fa-solid fa-circle-check"></i></span><h3 id="stat-total">0</h3><small>Total Tercatat</small></div>
+          <div class="stat-card gold"><span><i class="fa-solid fa-star"></i></span><h3 id="stat-percent">0%</h3><small>Kelengkapan</small></div>
         </div>
         <div class="card">
           <b>Rekap 7 Hari Terakhir</b>
           <div id="chart-bars" class="bars"></div>
         </div>
         <div class="card">
-          <b>Rekap Harian & Mingguan</b>
+          <b>Rekap Harian &amp; Mingguan</b>
           <p>Hari ini (Dzuhur): <b id="stat-today">0/1</b></p>
           <p>Minggu ini: <b id="stat-week">0/7</b> <small id="stat-week-pct"></small></p>
           <div class="progress"><div id="week-bar"></div></div>
@@ -128,9 +129,9 @@
 
       <!-- ADMIN: KELOLA NIS -->
       <section id="page-admin" class="page">
-        <h2 class="page-title">Kelola NIS 👥</h2>
+        <h2 class="page-title">Kelola NIS <i class="fa-solid fa-users"></i></h2>
         <div class="card">
-          <b>➕ Tambah NIS Baru</b>
+          <b><i class="fa-solid fa-user-plus"></i> Tambah NIS Baru</b>
           <input type="text" inputmode="numeric" id="new-nis" placeholder="NIS (angka)" />
           <input type="text" id="new-nama" placeholder="Nama siswa" />
           <input type="text" inputmode="numeric" id="new-user-pin" placeholder="PIN awal 4–6 digit (default 1234)" maxlength="6" />
@@ -145,50 +146,51 @@
 
       <!-- PENGATURAN -->
       <section id="page-settings" class="page">
-        <h2 class="page-title">Pengaturan ⚙️</h2>
+        <h2 class="page-title">Pengaturan <i class="fa-solid fa-gear"></i></h2>
         <div class="card">
-          <b>👤 Akun Saya</b>
+          <b><i class="fa-solid fa-user"></i> Akun Saya</b>
           <p id="me-info" class="muted">—</p>
         </div>
         <div class="card">
-          <b>🔑 Ganti PIN</b>
+          <b><i class="fa-solid fa-key"></i> Ganti PIN</b>
           <input type="password" inputmode="numeric" id="new-pin" placeholder="PIN baru 4–6 digit" maxlength="6" />
           <input type="password" inputmode="numeric" id="confirm-pin" placeholder="Konfirmasi PIN" maxlength="6" />
           <button class="btn-primary" id="btn-change-pin">Simpan PIN Baru</button>
           <p class="msg" id="pin-msg"></p>
         </div>
         <div class="card">
-          <b>🗑️ Data</b>
+          <b><i class="fa-solid fa-trash"></i> Data</b>
           <p class="muted">Hapus riwayat <b>akun saya</b> (di database).</p>
           <button class="btn-danger" id="btn-reset">Hapus Riwayat Saya</button>
         </div>
         <div class="card muted small">
-          🕌 Absensi Sholat • v2.0 (NIS + jvault)<br>
+          <i class="fa-solid fa-mosque"></i> Absensi Sholat • v2.1 (NIS + jvault + FA)<br>
           DB: <code>jvault.aerialstudio.tech</code><br>
           QR valid: <code>ABSENSI-SHOLAT-VALID</code>
           <p id="sync-status" style="margin-top:6px">—</p>
+          <button class="btn-ghost" id="btn-sync">Sinkron Ulang ke Database</button>
         </div>
-        <button class="btn-ghost" id="btn-lock">🔒 Kunci / Ganti Akun</button>
+        <button class="btn-ghost" id="btn-lock"><i class="fa-solid fa-lock"></i> Kunci / Ganti Akun</button>
       </section>
     </main>
 
     <nav class="bottom-nav">
-      <button data-page="page-home" class="active">🏠<small>Beranda</small></button>
-      <button data-page="page-scan">📷<small>Scan</small></button>
-      <button data-page="page-history">📜<small>Riwayat</small></button>
-      <button data-page="page-stats">📊<small>Statistik</small></button>
-      <button data-page="page-admin" id="nav-admin" style="display:none">👥<small>Kelola</small></button>
-      <button data-page="page-settings">⚙️<small>Akun</small></button>
+      <button data-page="page-home" class="active"><i class="fa-solid fa-house"></i><small>Beranda</small></button>
+      <button data-page="page-scan"><i class="fa-solid fa-qrcode"></i><small>Scan</small></button>
+      <button data-page="page-history"><i class="fa-solid fa-scroll"></i><small>Riwayat</small></button>
+      <button data-page="page-stats"><i class="fa-solid fa-chart-column"></i><small>Statistik</small></button>
+      <button data-page="page-admin" id="nav-admin" style="display:none"><i class="fa-solid fa-users"></i><small>Kelola</small></button>
+      <button data-page="page-settings"><i class="fa-solid fa-gear"></i><small>Akun</small></button>
     </nav>
   </div>
 
   <!-- SUCCESS MODAL -->
   <div id="success-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="check">✅</div>
+      <div class="check"><i class="fa-solid fa-circle-check"></i></div>
       <h3>Alhamdulillah,<br>absensi berhasil!</h3>
       <p id="success-detail"></p>
-      <button class="btn-primary" id="btn-modal-ok">MasyaAllah 🤲</button>
+      <button class="btn-primary" id="btn-modal-ok">MasyaAllah <i class="fa-solid fa-hands-praying"></i></button>
     </div>
   </div>
 
